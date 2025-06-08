@@ -1,0 +1,33 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "hopeless-5b39c",
+          "appId": "1:659499197191:android:5fbe2492133fd4ccd19ba2",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "hopeless-5b39c",
+          "appId": "1:659499197191:ios:330619d521f92719d19ba2",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "hopeless-5b39c",
+          "configurations": {
+            "android": "1:659499197191:android:5fbe2492133fd4ccd19ba2",
+            "ios": "1:659499197191:ios:330619d521f92719d19ba2"
+          }
+        }
+      }
+    }
+  },
+  "emulators": {
+    "singleProjectMode": true
+  }
+}

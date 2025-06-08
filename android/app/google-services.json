@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "659499197191",
+    "project_id": "hopeless-5b39c",
+    "storage_bucket": "hopeless-5b39c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:659499197191:android:5fbe2492133fd4ccd19ba2",
+        "android_client_info": {
+          "package_name": "com.hopeless.hopeless"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCnFhuDmDiFjPI4hdTlYRg4FB4SHww3TIw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
