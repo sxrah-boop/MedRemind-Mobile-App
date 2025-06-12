@@ -1,13 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:hopeless/models/prescription_model.dart';
+import 'package:hopeless/services/alternatives_fetch_service.dart';
 import 'package:hopeless/widgets/medicine-widgets/alternative_preview.dart';
 import 'package:hopeless/widgets/medicine-widgets/info_pill.dart';
 
-class Medicinedetails extends StatelessWidget {
-  const Medicinedetails({super.key});
+class Medicinedetails extends StatefulWidget {
+  final Prescription prescription;
+
+  const Medicinedetails({super.key, required this.prescription});
+
+  @override
+  State<Medicinedetails> createState() => _MedicinedetailsState();
+}
+
+class _MedicinedetailsState extends State<Medicinedetails> {
+  late Future<List<Map<String, dynamic>>> alternatives;
+
+  @override
+  void initState() {
+    super.initState();
+    alternatives = AlternativesService.fetchAlternatives(
+      widget.prescription.medicineId,
+    );
+  }
+
+  String _translateDay(String enDay) {
+    const map = {
+      'Mon': 'الإثنين',
+      'Tue': 'الثلاثاء',
+      'Wed': 'الأربعاء',
+      'Thu': 'الخميس',
+      'Fri': 'الجمعة',
+      'Sat': 'السبت',
+      'Sun': 'الأحد',
+    };
+    return map[enDay] ?? enDay;
+  }
+
+  String _translateMealRelation(String value) {
+    switch (value) {
+      case 'with_meal':
+        return 'مع الأكل';
+      case 'before_meal':
+        return 'قبل الأكل';
+      case 'mid_meal':
+        return 'منتصف الأكل';
+      case 'no_relation':
+        return 'بدون علاقة';
+      case 'empty_stomach':
+        return 'على معدة فارغة';
+      default:
+        return 'غير محدد';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
+    final prescription = widget.prescription;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -27,23 +77,35 @@ class Medicinedetails extends StatelessWidget {
             children: [
               // Product image
               Center(
-                child: Image.asset(
-                  'assets/images/formentin.png',
-                  width: 250,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    prescription.medicineImage.toString(),
+                    width: 250,
+                    height: 250,
+                    fit: BoxFit.cover,
+                    errorBuilder:
+                        (_, __, ___) => Image.asset(
+                          'assets/images/formentin.png',
+                          width: 250,
+                          height: 250,
+                          fit: BoxFit.cover,
+                        ),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
 
               // Title
               Text(
-                'Formentin 1000mg',
+                  "${widget.prescription.medicineName} ${widget.prescription.medicineDosage}" ,
                 style: theme.titleMedium?.copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
-                'Metformine',
+                prescription.medicineDci,
                 style: theme.bodyMedium?.copyWith(
                   color: Colors.grey,
                   fontWeight: FontWeight.w500,
@@ -52,22 +114,39 @@ class Medicinedetails extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Pills
-              const Wrap(
+              Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 alignment: WrapAlignment.start,
                 children: [
-                  InfoPill(icon: Icons.access_time, label: 'كل يوم'),
-                  InfoPill(icon: Icons.wb_sunny_outlined, label: 'صباحا'),
-                  InfoPill(icon: Icons.restaurant, label: 'بعد الأكل'),
-                  InfoPill(icon: Icons.medication_outlined, label: 'حبة واحدة'),
+                  InfoPill(
+                    icon: Icons.calendar_today_outlined,
+                    label: prescription.frequencyPerWeek
+                        .map(_translateDay)
+                        .join('، '),
+                  ),
+                  if (prescription.schedules.isNotEmpty)
+                    ...prescription.schedules.map(
+                      (schedule) => InfoPill(
+                        icon: Icons.access_time,
+                        label:
+                            '${schedule.horaire.substring(0, 5)} - ${schedule.posologie} حبة',
+                      ),
+                    ),
+                  InfoPill(
+                    icon: Icons.restaurant,
+                    label: _translateMealRelation(prescription.mealRelation),
+                  ),
                 ],
               ),
+
               const SizedBox(height: 24),
 
               // Description
               Text(
-                '''فورمينتين 1000 ملغ هو مضاد حيوي يُستخدم لعلاج الالتهابات البكتيرية مثل التهابات الجهاز التنفسي، التهابات الأذن، والتهابات المسالك البولية. يساعد في قتل البكتيريا المسببة للمرض، لكن يجب أخذه وفقاً لوصفة الطبيب وعدم التوقف عن تناوله قبل انتهاء المدة المحددة حتى لو شعرت بتحسن. إذا كنت تعاني من حساسية تجاه البنسلين، استشر طبيبك قبل استخدامه.''',
+                prescription.instructions.isNotEmpty
+                    ? prescription.instructions
+                    : 'لا توجد تعليمات محددة.',
                 style: theme.bodyMedium?.copyWith(height: 1.8),
                 textAlign: TextAlign.justify,
               ),
@@ -88,20 +167,53 @@ class Medicinedetails extends StatelessWidget {
               const SizedBox(height: 12),
 
               // Alternatives horizontal list
-              SizedBox(
-                height: 155,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 2,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (_, index) {
-                    return AlternativePreview(
-                      imagePath: 'assets/images/formentin.png',
-                      name: 'Formentin 1000mg',
-                      substance: 'Metformine',
-                    );
-                  },
-                ),
+              FutureBuilder<List<Map<String, dynamic>>>(
+                future: alternatives,
+                builder: (context, snapshot) {
+                  print(
+                    '📦 Snapshot Connection State: ${snapshot.connectionState}',
+                  );
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    print('⏳ Waiting for alternatives to load...');
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    print('❌ Error fetching alternatives: ${snapshot.error}');
+                    return Center(child: Text('فشل في تحميل البدائل'));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    print('⚠️ No alternatives found or data empty.');
+                    return Center(child: Text('لا توجد بدائل متاحة'));
+                  }
+
+                  final alternativesList = snapshot.data!;
+                  print('✅ Alternatives fetched: ${alternativesList.length}');
+
+                  return SizedBox(
+                    height: 220, // <- Set height properly to fit the cards
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: alternativesList.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (_, index) {
+                        final alt = alternativesList[index];
+                        print(
+                          '🖼️ Alt ${index + 1}: ${alt['brand_name']} - ${alt['image']}',
+                        );
+
+                        final imageUrl =
+                            (alt['image'] != null &&
+                                    alt['image'].toString().isNotEmpty)
+                                ? alt['image']
+                                : null;
+
+                        return AlternativePreview(
+                          imagePath: imageUrl,
+                          name: alt['brand_name'] ?? '',
+                          substance: alt['dci'] ?? '',
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
             ],
           ),

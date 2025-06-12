@@ -17,7 +17,8 @@ class NotificationService {
     final isAllowed = await AwesomeNotifications().isNotificationAllowed();
     if (!isAllowed) {
       debugPrint('[🔕 Permission] Requesting permission...');
-      final granted = await AwesomeNotifications().requestPermissionToSendNotifications();
+      final granted =
+          await AwesomeNotifications().requestPermissionToSendNotifications();
       if (!granted) {
         debugPrint('[❌ Permission] User denied notification permission.');
       } else {
@@ -25,11 +26,17 @@ class NotificationService {
       }
     }
 
-    final initialAction = await AwesomeNotifications().getInitialNotificationAction(removeFromActionEvents: false);
+    final initialAction = await AwesomeNotifications()
+        .getInitialNotificationAction(removeFromActionEvents: false);
     if (initialAction?.payload != null) {
-      debugPrint('[📦 Payload] Saving initial payload for navigation: ${initialAction!.payload}');
+      debugPrint(
+        '[📦 Payload] Saving initial payload for navigation: ${initialAction!.payload}',
+      );
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('initial_payload', jsonEncode(initialAction.payload));
+      await prefs.setString(
+        'initial_payload',
+        jsonEncode(initialAction.payload),
+      );
     }
 
     AwesomeNotifications().setListeners(
@@ -41,26 +48,24 @@ class NotificationService {
 
   static Future<void> initializeNotifications() async {
     debugPrint('[🔧 Channel] Setting up notification channel...');
-    await AwesomeNotifications().initialize(
-      null,
-      [
-        NotificationChannel(
-          channelKey: 'med_reminder_channel',
-          channelName: 'Medical Reminders',
-          channelDescription: 'Reminders to take your medication',
-          defaultColor: const Color(0xFF03905D),
-          importance: NotificationImportance.High,
-        ),
-      ],
-      debug: true,
-    );
+    await AwesomeNotifications().initialize(null, [
+      NotificationChannel(
+        channelKey: 'med_reminder_channel',
+        channelName: 'Medical Reminders',
+        channelDescription: 'Reminders to take your medication',
+        defaultColor: const Color(0xFF03905D),
+        importance: NotificationImportance.High,
+      ),
+    ], debug: true);
   }
 
   /// Fetch prescription again and reschedule
   static Future<void> syncAndScheduleNotifications(int prescriptionId) async {
     try {
       debugPrint('[🔄 Sync] Fetching updated prescription: $prescriptionId...');
-      final fullPrescription = await PrescriptionService.getPrescriptionById(prescriptionId);
+      final fullPrescription = await PrescriptionService.getPrescriptionById(
+        prescriptionId,
+      );
 
       if (fullPrescription != null) {
         debugPrint('[📦 Sync] Prescription fetched. Rescheduling...');
@@ -74,10 +79,14 @@ class NotificationService {
     }
   }
 
-  static Future<void> schedulePrescriptionNotifications(Prescription prescription) async {
+  static Future<void> schedulePrescriptionNotifications(
+    Prescription prescription,
+  ) async {
     final isAllowed = await AwesomeNotifications().isNotificationAllowed();
     if (!isAllowed) {
-      debugPrint('[🚫 Schedule] Notifications not allowed for prescription ${prescription.id}');
+      debugPrint(
+        '[🚫 Schedule] Notifications not allowed for prescription ${prescription.id}',
+      );
       return;
     }
 
@@ -111,22 +120,24 @@ class NotificationService {
             id: notificationId,
             channelKey: 'med_reminder_channel',
             title: '💊 ${prescription.medicineName}',
-            body: '${prescription.instructions}\nالجرعة: ${schedule.posologie}، مع ${_translateMeal(prescription.mealRelation)}',
+            body:
+                '${prescription.instructions}\nالجرعة: ${schedule.posologie}، مع ${_translateMeal(prescription.mealRelation)}',
             notificationLayout: NotificationLayout.BigPicture,
-            bigPicture: prescription.medicineImage.startsWith('http')
-                ? prescription.medicineImage
-                : 'asset://${prescription.medicineImage}',
+            bigPicture:
+                prescription.medicineImage.toString().startsWith('http')
+                    ? prescription.medicineImage.toString()
+                    : 'asset://${prescription.medicineImage.toString()}',
             payload: {
               'screen': 'notification',
-               'horaireId': '${schedule.id}',            // ✅ Add this
-               'notificationId': '$notificationId', 
+              'horaireId': '${schedule.id}', // ✅ Add this
+              'notificationId': '$notificationId',
               'prescriptionId': '${prescription.id}',
               'medicineName': prescription.medicineName,
               'dose': '${schedule.posologie}',
               'horaire': schedule.horaire,
               'mealRelation': prescription.mealRelation,
               'instructions': prescription.instructions,
-              'image': prescription.medicineImage ?? '',
+              'image': prescription.medicineImage.toString(),
             },
           ),
           schedule: NotificationCalendar(
@@ -140,7 +151,10 @@ class NotificationService {
           ),
           actionButtons: [
             NotificationActionButton(key: 'TAKEN', label: 'تم التناول ✅'),
-            NotificationActionButton(key: 'REMIND_LATER', label: 'ذكرني لاحقًا ⏰'),
+            NotificationActionButton(
+              key: 'REMIND_LATER',
+              label: 'ذكرني لاحقًا ⏰',
+            ),
           ],
         );
       }
@@ -149,7 +163,9 @@ class NotificationService {
     debugPrint('[✅ Schedule] Notifications created for ${prescription.id}');
   }
 
-  static Future<void> cancelPrescriptionNotifications(int prescriptionId) async {
+  static Future<void> cancelPrescriptionNotifications(
+    int prescriptionId,
+  ) async {
     debugPrint('[🗑️ Cancel] Cancelling notifications for $prescriptionId...');
     for (int i = 0; i < 100; i++) {
       final id = prescriptionId * 100 + i;
@@ -158,97 +174,103 @@ class NotificationService {
     debugPrint('[✅ Cancel] All notifications cleared for $prescriptionId');
   }
 
-@pragma('vm:entry-point')
-static Future<void> _onActionReceived(ReceivedAction action) async {
-  debugPrint('📲 Notification Action Received: ${action.toMap()}');
+  @pragma('vm:entry-point')
+  static Future<void> _onActionReceived(ReceivedAction action) async {
+    debugPrint('📲 Notification Action Received: ${action.toMap()}');
 
-  final payload = action.payload?.map((key, value) => MapEntry(key, value ?? ''));
+    final payload = action.payload?.map(
+      (key, value) => MapEntry(key, value ?? ''),
+    );
 
-  // 🧠 Helper to show feedback if navKey has context
-  void showSnack(String message) {
-    final context = navKey.currentContext;
-    if (context != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message, textAlign: TextAlign.center),
-          backgroundColor: Colors.teal,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    } else {
-      debugPrint('⚠️ Unable to show snackbar – context is null');
-    }
-  }
-
-  // 🔹 Handle "TAKEN"
-  if (action.buttonKeyPressed == 'TAKEN') {
-    debugPrint('✅ Action: Medication Taken');
-
-    if (payload != null) {
-      try {
-        final horaireId = int.parse(payload['horaireId']!);
-        final scheduledTimeStr = payload['horaire']!;
-        final notificationId = int.parse(payload['notificationId']!);
-
-        await handleDoseConfirmation(
-          horaireId: horaireId,
-          scheduledTimeStr: scheduledTimeStr,
-          notificationId: notificationId,
+    // 🧠 Helper to show feedback if navKey has context
+    void showSnack(String message) {
+      final context = navKey.currentContext;
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message, textAlign: TextAlign.center),
+            backgroundColor: Colors.teal,
+            duration: const Duration(seconds: 3),
+          ),
         );
-        showSnack('✅ تم تسجيل الجرعة');
-      } catch (e) {
-        debugPrint('❌ [Error TAKEN]: $e');
-        showSnack('❌ حدث خطأ أثناء تسجيل الجرعة');
+      } else {
+        debugPrint('⚠️ Unable to show snackbar – context is null');
       }
-    } else {
-      debugPrint('⚠️ [TAKEN] No payload available');
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      navKey.currentState?.pushNamedAndRemoveUntil('/home', (_) => false);
-    });
+    // 🔹 Handle "TAKEN"
+    if (action.buttonKeyPressed == 'TAKEN') {
+      debugPrint('✅ Action: Medication Taken');
 
-    return;
-  }
+      if (payload != null) {
+        try {
+          final horaireId = int.parse(payload['horaireId']!);
+          final scheduledTimeStr = payload['horaire']!;
+          final notificationId = int.parse(payload['notificationId']!);
 
-  // 🔹 Handle "REMIND_LATER"
-  if (action.buttonKeyPressed == 'REMIND_LATER') {
-    debugPrint('⏰ Action: Remind Me Later');
-
-    if (payload != null) {
-      try {
-        await scheduleRemindLaterNotification(payload);
-        showSnack('⏰ سيتم التذكير بعد 10 دقائق');
-      } catch (e) {
-        debugPrint('❌ [Error REMIND_LATER]: $e');
-        showSnack('❌ فشل في جدولة التذكير');
+          await handleDoseConfirmation(
+            horaireId: horaireId,
+            scheduledTimeStr: scheduledTimeStr,
+            notificationId: notificationId,
+          );
+          showSnack('✅ تم تسجيل الجرعة');
+        } catch (e) {
+          debugPrint('❌ [Error TAKEN]: $e');
+          showSnack('❌ حدث خطأ أثناء تسجيل الجرعة');
+        }
+      } else {
+        debugPrint('⚠️ [TAKEN] No payload available');
       }
-    } else {
-      debugPrint('⚠️ [REMIND_LATER] No payload available');
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navKey.currentState?.pushNamedAndRemoveUntil('/home', (_) => false);
+      });
+
+      return;
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      navKey.currentState?.pushNamedAndRemoveUntil('/home', (_) => false);
-    });
+    // 🔹 Handle "REMIND_LATER"
+    if (action.buttonKeyPressed == 'REMIND_LATER') {
+      debugPrint('⏰ Action: Remind Me Later');
 
-    return;
+      if (payload != null) {
+        try {
+          await scheduleRemindLaterNotification(payload);
+          showSnack('⏰ سيتم التذكير بعد 10 دقائق');
+        } catch (e) {
+          debugPrint('❌ [Error REMIND_LATER]: $e');
+          showSnack('❌ فشل في جدولة التذكير');
+        }
+      } else {
+        debugPrint('⚠️ [REMIND_LATER] No payload available');
+      }
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navKey.currentState?.pushNamedAndRemoveUntil('/home', (_) => false);
+      });
+
+      return;
+    }
+
+    // 🔹 Tapped body of the notification
+    if (payload?['screen'] == 'notification') {
+      debugPrint('🖱️ Notification tapped → Navigating to notification screen');
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navKey.currentState?.pushNamedAndRemoveUntil(
+          '/notification',
+          (_) => false,
+          arguments: payload,
+        );
+      });
+    }
   }
 
-  // 🔹 Tapped body of the notification
-  if (payload?['screen'] == 'notification') {
-    debugPrint('🖱️ Notification tapped → Navigating to notification screen');
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      navKey.currentState?.pushNamedAndRemoveUntil(
-        '/notification',
-        (_) => false,
-        arguments: payload,
-      );
-    });
-  }
-}
-
-  static int _generateUniqueId(int prescriptionId, int scheduleIndex, int weekday) {
+  static int _generateUniqueId(
+    int prescriptionId,
+    int scheduleIndex,
+    int weekday,
+  ) {
     return prescriptionId * 1000 + scheduleIndex * 10 + weekday;
   }
 
@@ -269,51 +291,54 @@ static Future<void> _onActionReceived(ReceivedAction action) async {
     }
   }
 
-static Future<void> scheduleRemindLaterNotification(Map<String, String> payload) async {
- final now = DateTime.now();
-final remindAt = now.add(const Duration(minutes: 10));
-Future<void> scheduleRemindLaterNotification(Map<String, String> originalPayload) async {
-  final remindAt = DateTime.now().add(const Duration(minutes: 10));
-  final newId = remindAt.millisecondsSinceEpoch.remainder(100000);
+  static Future<void> scheduleRemindLaterNotification(
+    Map<String, String> payload,
+  ) async {
+    final now = DateTime.now();
+    final remindAt = now.add(const Duration(minutes: 10));
+    Future<void> scheduleRemindLaterNotification(
+      Map<String, String> originalPayload,
+    ) async {
+      final remindAt = DateTime.now().add(const Duration(minutes: 10));
+      final newId = remindAt.millisecondsSinceEpoch.remainder(100000);
 
-  debugPrint('🔁 Scheduling reminder for ${remindAt.toLocal()} with ID $newId');
+      debugPrint(
+        '🔁 Scheduling reminder for ${remindAt.toLocal()} with ID $newId',
+      );
 
-  try {
-    await AwesomeNotifications().createNotification(
-      content: NotificationContent(
-        id: newId,
-        channelKey: 'med_reminder_channel',
-        title: '💊 تذكير: لم تتناول دواءك بعد!',
-        body: 'اضغط لعرض تفاصيل الدواء واتخاذ الإجراء المناسب.',
-        notificationLayout: NotificationLayout.BigPicture,
-        bigPicture: originalPayload['image']?.startsWith('http') == true
-            ? originalPayload['image']!
-            : 'asset://${originalPayload['image']}',
-        payload: {
-          ...originalPayload,
-          'screen': 'notification',
-        },
-      ),
-      schedule: NotificationCalendar(
-        year: remindAt.year,
-        month: remindAt.month,
-        day: remindAt.day,
-        hour: remindAt.hour,
-        minute: remindAt.minute,
-        second: remindAt.second,
-        timeZone: await AwesomeNotifications().getLocalTimeZoneIdentifier(),
-        repeats: false,
-        preciseAlarm: true,
-      ),
-    );
-    debugPrint('✅ Remind-later notification scheduled successfully.');
-  } catch (e) {
-    debugPrint('❌ Failed to schedule remind-later notification: $e');
+      try {
+        await AwesomeNotifications().createNotification(
+          content: NotificationContent(
+            id: newId,
+            channelKey: 'med_reminder_channel',
+            title: '💊 تذكير: لم تتناول دواءك بعد!',
+            body: 'اضغط لعرض تفاصيل الدواء واتخاذ الإجراء المناسب.',
+            notificationLayout: NotificationLayout.BigPicture,
+            bigPicture:
+                originalPayload['image']?.startsWith('http') == true
+                    ? originalPayload['image']!
+                    : 'asset://${originalPayload['image']}',
+            payload: {...originalPayload, 'screen': 'notification'},
+          ),
+          schedule: NotificationCalendar(
+            year: remindAt.year,
+            month: remindAt.month,
+            day: remindAt.day,
+            hour: remindAt.hour,
+            minute: remindAt.minute,
+            second: remindAt.second,
+            timeZone: await AwesomeNotifications().getLocalTimeZoneIdentifier(),
+            repeats: false,
+            preciseAlarm: true,
+          ),
+        );
+        debugPrint('✅ Remind-later notification scheduled successfully.');
+      } catch (e) {
+        debugPrint('❌ Failed to schedule remind-later notification: $e');
+      }
+    }
   }
-}
-}
-  
-  
+
   static Future<void> handleDoseConfirmation({
     required int horaireId,
     required String scheduledTimeStr, // "HH:mm:ss"
@@ -380,44 +405,46 @@ Future<void> scheduleRemindLaterNotification(Map<String, String> originalPayload
     }
   }
 
-static Future<void> _submitToBackend({
-  required int horaireId,
-  required String statut,
-  required String horairePriseActuel,
-}) async {
-  debugPrint('[📤 Confirm Dose] ID: $horaireId | Status: $statut | At: $horairePriseActuel');
-
-  final user = FirebaseAuth.instance.currentUser;
-  final token = await user?.getIdToken();
-
-  if (token == null) {
-    throw Exception("⚠️ Firebase token not found");
-  }
-
-  final dio = Dio();
-
-  try {
-    final response = await dio.post(
-      'https://medremind.onrender.com/api/prise/confirm/',
-      data: {
-        "horaire_id": horaireId,
-        "statut": statut,
-        "horaire_prise_actuel": horairePriseActuel
-      },
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      ),
+  static Future<void> _submitToBackend({
+    required int horaireId,
+    required String statut,
+    required String horairePriseActuel,
+  }) async {
+    debugPrint(
+      '[📤 Confirm Dose] ID: $horaireId | Status: $statut | At: $horairePriseActuel',
     );
 
-    debugPrint('✅ Backend Response: ${response.statusCode} ${response.data}');
-  } catch (e) {
-    debugPrint('❌ Error submitting dose confirmation: $e');
-    rethrow;
+    final user = FirebaseAuth.instance.currentUser;
+    final token = await user?.getIdToken();
+
+    if (token == null) {
+      throw Exception("⚠️ Firebase token not found");
+    }
+
+    final dio = Dio();
+
+    try {
+      final response = await dio.post(
+        'https://medremind.onrender.com/api/prise/confirm/',
+        data: {
+          "horaire_id": horaireId,
+          "statut": statut,
+          "horaire_prise_actuel": horairePriseActuel,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      debugPrint('✅ Backend Response: ${response.statusCode} ${response.data}');
+    } catch (e) {
+      debugPrint('❌ Error submitting dose confirmation: $e');
+      rethrow;
+    }
   }
-}
 
   static void _showFeedback(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -428,5 +455,4 @@ static Future<void> _submitToBackend({
       ),
     );
   }
-
 }
