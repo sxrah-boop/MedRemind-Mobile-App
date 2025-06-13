@@ -4,7 +4,6 @@ import 'package:hopeless/screens/prescripitons/edit_prescription_screen.dart';
 import 'package:hopeless/services/edit_delete_prescription_service.dart';
 import 'package:hopeless/screens/medicine-screens/medicine_details_screen.dart';
 
-
 class PrescriptionCard extends StatefulWidget {
   final Prescription prescription;
   final VoidCallback? onRefresh;
@@ -58,83 +57,104 @@ class _PrescriptionCardState extends State<PrescriptionCard> {
   void _confirmDelete(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
-          ),
-          title: const Text(
-            'تأكيد الحذف',
-            style: TextStyle(
-              fontFamily: 'IBMPlexSansArabic',
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  height: 80,
-                  width: 80,
-                  child: Image.network(
-                    widget.prescription.medicineImage.toString(),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Image.asset(
-                      'assets/images/formentin.png',
-                      fit: BoxFit.cover,
+      builder:
+          (_) => Directionality(
+            textDirection: TextDirection.rtl,
+            child: AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              elevation: 0,
+              title: const Text(
+                'تأكيد الحذف',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 20,
+                  color: Color(0xFF112A54),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 48,
+                      color: Colors.red,
                     ),
                   ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'هل تريد حذف الوصفة الخاصة بـ "${widget.prescription.medicineName}"؟',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      height: 1.6,
+                      fontSize: 16,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+              actionsPadding: const EdgeInsets.all(20),
+              actions: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: const BorderSide(color: Color(0xFFE5E7EB)),
+                          ),
+                        ),
+                        child: const Text(
+                          'إلغاء',
+                          style: TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'نعم، حذف',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'هل تريد حذف الوصفة الخاصة بـ "${widget.prescription.medicineName}"؟',
-                textAlign: TextAlign.center,
-                style: const TextStyle(height: 1.6),
-              ),
-            ],
+              ],
+            ),
           ),
-          actionsAlignment: MainAxisAlignment.spaceBetween,
-          actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          actions: [
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, false),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey.shade100,
-                foregroundColor: Colors.blueGrey,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('إلغاء'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('نعم، حذف'),
-            ),
-          ],
-        ),
-      ),
     );
 
     if (confirmed == true) {
-      await PrescriptionEditDeleteService.deletePrescription(widget.prescription.id);
+      await PrescriptionEditDeleteService.deletePrescription(
+        widget.prescription.id,
+      );
       if (widget.onRefresh != null) widget.onRefresh!();
     }
   }
@@ -154,193 +174,310 @@ class _PrescriptionCardState extends State<PrescriptionCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context).textTheme;
-
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => Medicinedetails(prescription: widget.prescription),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFE5E7EB).withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
-          );
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              /// Header
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: SizedBox(
-                      width: 72,
-                      height: 72,
-                      child: Image.network(
-                        widget.prescription.medicineImage.toString(),
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Image.asset(
-                          'assets/images/formentin.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "${widget.prescription.medicineName} ${widget.prescription.medicineDosage}" ,
-                          style: theme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        // Text(
-                        //   widget.prescription.medicineId.toString(),
-                        //   style: theme.titleMedium?.copyWith(
-                        //     fontWeight: FontWeight.bold,
-                        //   ),
-                        //   maxLines: 1,
-                        //   overflow: TextOverflow.ellipsis,
-                        // ),
-                        Text(
-                          widget.prescription.medicineDci,
-                          style: theme.bodySmall?.copyWith(color: Colors.grey),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          widget.prescription.doctor == null || widget.prescription.doctor!.isEmpty
-                              ? 'وصفة شخصية'
-                              : 'مسجلة من طرف طبيبي',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.blueGrey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              if (widget.prescription.schedules.isNotEmpty)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: widget.prescription.schedules
-                        .map(
-                          (s) => Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEAF2FC),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${s.horaire.substring(0, 5)} - ${s.posologie} حبة',
-                              style: theme.bodySmall,
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (_) => Medicinedetails(prescription: widget.prescription),
                 ),
-
-              const SizedBox(height: 12),
-
-              Row(
+              );
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.calendar_today_outlined, size: 18, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _isEveryday(widget.prescription.frequencyPerWeek)
-                          ? 'كل يوم'
-                          : 'أيام: ${widget.prescription.frequencyPerWeek.map(_translateDay).join('، ')}',
-                      style: theme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 6),
-
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.restaurant_menu_outlined, size: 18, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _translateMealRelation(widget.prescription.mealRelation),
-                      style: theme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              if (widget.prescription.doctor == null || widget.prescription.doctor!.isEmpty)
-                Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  // Header Section
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _iconButton(
-                        Icons.delete_outline,
-                        Colors.redAccent,
-                        () => _confirmDelete(context),
+                      // Medicine Image
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: const Color(0xFFF8FAFC),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            widget.prescription.medicineImage.toString(),
+                            fit: BoxFit.cover,
+                            errorBuilder:
+                                (_, __, ___) => Image.asset(
+                                  'assets/images/formentin.png',
+                                  fit: BoxFit.cover,
+                                ),
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 10),
-                      _iconButton(
-                        Icons.edit_outlined,
-                        const Color(0xFF4A90E2),
-                        () => _openEditDialog(context),
+                      const SizedBox(width: 16),
+
+                      // Medicine Info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${widget.prescription.medicineName} ${widget.prescription.medicineDosage}",
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF112A54),
+                                height: 1.2,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.prescription.medicineDci,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF6B7280),
+                                height: 1.3,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    widget.prescription.doctor == null ||
+                                            widget.prescription.doctor!.isEmpty
+                                        ? const Color(0xFFEFF6FF)
+                                        : const Color(0xFFF0FDF4),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                widget.prescription.doctor == null ||
+                                        widget.prescription.doctor!.isEmpty
+                                    ? 'وصفة شخصية'
+                                    : 'وصفة طبية',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      widget.prescription.doctor == null ||
+                                              widget
+                                                  .prescription
+                                                  .doctor!
+                                                  .isEmpty
+                                          ? const Color(0xFF3B82F6)
+                                          : const Color(0xFF059669),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-            ],
+
+                  const SizedBox(height: 20),
+
+                  // Schedule Pills
+                  if (widget.prescription.schedules.isNotEmpty) ...[
+                    SizedBox(
+                      height: 32,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: widget.prescription.schedules.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final schedule = widget.prescription.schedules[index];
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF112A54).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFF112A54).withOpacity(0.2),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.access_time_rounded,
+                                  size: 14,
+                                  color: const Color(
+                                    0xFF112A54,
+                                  ).withOpacity(0.8),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${schedule.horaire.substring(0, 5)} • ${schedule.posologie == 1 ? 'حبة واحدة' : '${schedule.posologie} حبات'}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(
+                                      0xFF112A54,
+                                    ).withOpacity(0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Info Row
+                  Column(
+                    children: [
+                      // Days Info
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.calendar_today_rounded,
+                              size: 16,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _isEveryday(widget.prescription.frequencyPerWeek)
+                                  ? 'كل يوم'
+                                  : widget.prescription.frequencyPerWeek
+                                      .map(_translateDay)
+                                      .join('، '),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF374151),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Meal Info
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.restaurant_rounded,
+                              size: 16,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _translateMealRelation(
+                                widget.prescription.mealRelation,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF374151),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // Action Buttons (only for personal prescriptions)
+                  if (widget.prescription.doctor == null ||
+                      widget.prescription.doctor!.isEmpty) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        _buildActionButton(
+                          icon: Icons.delete_outline_rounded,
+                          color: Colors.red,
+                          onPressed: () => _confirmDelete(context),
+                        ),
+                        const SizedBox(width: 12),
+                        _buildActionButton(
+                          icon: Icons.edit_rounded,
+                          color: const Color(0xFF112A54),
+                          onPressed: () => _openEditDialog(context),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _iconButton(IconData icon, Color color, VoidCallback? onPressed) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(100),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          border: Border.all(color: color.withOpacity(0.3)),
-          borderRadius: BorderRadius.circular(40),
+  Widget _buildActionButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.2)),
+          ),
+          child: Icon(icon, size: 18, color: color),
         ),
-        child: Icon(icon, color: color, size: 20),
       ),
     );
   }

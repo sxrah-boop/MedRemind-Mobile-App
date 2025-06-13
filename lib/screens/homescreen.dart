@@ -7,7 +7,6 @@ import 'package:hopeless/widgets/medicine-widgets/daily_meds_list.dart';
 import 'package:hopeless/widgets/stats_card.dart';
 import '../widgets/menu_bar.dart';
 import '../chatbot/chat_screen.dart'; // <-- Import your ChatScreen
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -19,47 +18,50 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    // Tab 0: Home
-    const SingleChildScrollView(
+    // ✅ Each of these must have its own Scaffold
+    SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          HomeHeader(
+          const HomeHeader(
             username: 'سارة',
-            notificationCount: 4,
           ),
-          StatsCard(taken: 3, total: 4),
-          DailyMedList(),
+          const SizedBox(height: 12),
+          const StatsCard(taken: 3, total: 4),
+          const SizedBox(height: 12),
+           DailyMedList(),
         ],
       ),
     ),
-    // Tab 1: Education
-    const EducationScreen(),
-    // Tab 2: Medications
-    const MedicinesScreen(),
-    // Tab 3: Profile
-    const ProfileScreen(),
-    // Tab 4: Chatbot
-    const ChatScreen(),
+     EducationPage(),
+     MedicinesScreen(),
+     ProfileScreen(),
+     ChatScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFEAF2FC), Color(0xFFF9FAFB)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: IndexedStack(
-            index: _selectedIndex,
-            children: _screens,
-          ),
-        ),
+      // ✅ Only if _screens[0] doesn’t have a Scaffold, wrap it manually
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: List.generate(_screens.length, (index) {
+          final screen = _screens[index];
+          if (index == 0) {
+            // Home screen doesn't use its own Scaffold, so we wrap it
+            return Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFEAF2FC), Color(0xFFF9FAFB)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: SafeArea(child: screen),
+            );
+          }
+          return screen;
+        }),
       ),
       bottomNavigationBar: CustomMenuBar(
         selectedIndex: _selectedIndex,

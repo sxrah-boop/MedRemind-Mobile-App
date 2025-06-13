@@ -65,7 +65,7 @@ class _ScheduleStepScreenState extends State<ScheduleStepScreen> {
         }
 
         // ✅ Schedule the notifications
-await NotificationService.syncAndScheduleNotifications(widget.prescriptionId);
+       await NotificationService.syncAndScheduleNotifications(widget.prescriptionId);
 
         // ✅ Navigate to home
         Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);

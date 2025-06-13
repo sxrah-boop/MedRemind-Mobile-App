@@ -15,7 +15,7 @@ class InfoPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-       color: Color.fromARGB(249, 231, 235, 242),
+       color: Color.fromARGB(248, 235, 243, 255),
         borderRadius: BorderRadius.circular(12),
      
       ),
@@ -27,7 +27,7 @@ class InfoPill extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: Colors.black,
+              color: Color.fromARGB(255, 23, 49, 109),
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),

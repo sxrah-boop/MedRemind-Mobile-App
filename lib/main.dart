@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,6 +7,7 @@ import 'package:hopeless/chatbot/chat_screen.dart';
 import 'package:hopeless/screens/Auth/PhoneLoginScreen.dart';
 import 'package:hopeless/screens/homescreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hopeless/notification-reminders/notification_service.dart';
 
 import 'firebase_options.dart';
 import 'notification-reminders/notification_service.dart';
@@ -83,7 +85,7 @@ class _MyAppState extends State<MyApp> {
   switch (settings.name) {
     case '/':
     case '/home':
-      return MaterialPageRoute(builder: (_) => HomeScreen());
+      return MaterialPageRoute(builder: (_) => PhoneLoginScreen());
 
     case '/notification':
       final payload = settings.arguments as Map<String, String>;

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:hopeless/screens/scheduled_notifications_screen.dart'; // 👈 Make sure this is your file path
 
 class HomeHeader extends StatelessWidget {
   final String username;
-  final int notificationCount;
 
   const HomeHeader({
     Key? key,
     required this.username,
-    required this.notificationCount,
   }) : super(key: key);
 
   @override
@@ -19,7 +18,7 @@ class HomeHeader extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.only(top: 18, right: 20, left: 20, bottom: 10),
-        color: Colors.transparent, // 👈 transparent background
+        color: Colors.transparent,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -46,43 +45,50 @@ class HomeHeader extends StatelessWidget {
                 ),
               ],
             ),
-         
-            // Notification icon
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
+
+            // Notification icon + label
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ScheduledNotificationsScreen(),
                   ),
-                  child: const Icon(
-                    Icons.notifications_none,
-                    color: Colors.black87,
+                );
+              },
+              borderRadius: BorderRadius.circular(30),
+              child: OutlinedButton.icon(
+  onPressed: () {
+    // Navigate to your reminders screen here
+        Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ScheduledNotificationsScreen(),
                   ),
-                ),
-                if (notificationCount > 0)
-                  Positioned(
-                    top: -2,
-                    left: -2,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        '$notificationCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+                );
+  },
+  icon: const Icon(
+    Icons.notifications_none,
+    size: 22,
+    color: Color.fromARGB(255, 6, 53, 128),
+  ),
+  label: const Text(
+    'تذكيراتي',
+    style: TextStyle(
+      color: Color.fromARGB(255, 6, 53, 128),
+      fontWeight: FontWeight.w600,
+      fontSize: 14,
+    ),
+  ),
+  style: OutlinedButton.styleFrom(
+    backgroundColor: Colors.white,
+    side: const BorderSide(color: Color.fromARGB(255, 6, 53, 128), width: 1.2),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+  ),
+)
             ),
           ],
         ),

@@ -1,20 +1,21 @@
 class Schedule {
-  final int? id; // ✅ Make id nullable
+  final int? id;
   final String horaire;
   final int posologie;
 
   const Schedule({
-    this.id, // ✅ Nullable in constructor
+    this.id,
     required this.horaire,
     required this.posologie,
   });
 
   factory Schedule.fromJson(Map<String, dynamic> json) => Schedule(
-        id: json['id'] != null ? json['id'] as int : null, // ✅ Safe parsing
-        horaire: json['horaire'] ?? '', // ✅ Default to empty string if missing
-        posologie: json['posologie'] ?? 0, // ✅ Default to 0 if missing
+        id: json['id'] != null ? int.tryParse(json['id'].toString()) : null,
+        horaire: json['horaire'] ?? '',
+        posologie: json['posologie'] ?? 0,
       );
 }
+
 
 class Prescription {
   final int id;

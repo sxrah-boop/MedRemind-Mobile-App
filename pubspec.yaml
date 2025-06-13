@@ -48,6 +48,11 @@ dependencies:
   flutter_chat_ui: ^2.3.1
   uuid: ^4.5.1
   flutter_chat_types: ^3.6.2
+  flutter_widget_from_html: ^0.16.0
+  youtube_player_flutter: ^9.1.1
+  flutter_html: ^3.0.0
+  flutter_html_iframe: ^3.0.0
+  video_info_plus: ^1.0.2
 
 
 dev_dependencies:

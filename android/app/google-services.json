@@ -12,7 +12,20 @@
           "package_name": "com.hopeless.hopeless"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "659499197191-3gvprmrtvlkcqh08d2aqeerng2bjitj1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hopeless.hopeless",
+            "certificate_hash": "cf888d37edccbbfc3021985dbe8a03319dbb32ba"
+          }
+        },
+        {
+          "client_id": "659499197191-m9nkak2lqje1ths3fbmtaibl781n34l8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCnFhuDmDiFjPI4hdTlYRg4FB4SHww3TIw"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "659499197191-m9nkak2lqje1ths3fbmtaibl781n34l8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "659499197191-p96u6dsgo5hga6n2258aqkpq78dbp72l.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.hopeless.hopeless"
+              }
+            }
+          ]
         }
       }
     }
