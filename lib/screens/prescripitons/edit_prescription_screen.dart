@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hopeless/models/prescription_model.dart';
 import 'package:hopeless/services/edit_delete_prescription_service.dart';
 import 'package:hopeless/widgets/DoseTimeEntryCard.dart';
-import 'package:hopeless/notification-reminders/notification_service.dart';
+import 'package:hopeless/notification-reminders/notification_servicee_basic.dart';
 
 class EditPrescriptionPage extends StatefulWidget {
   final Prescription prescription;
@@ -128,7 +128,7 @@ class _EditPrescriptionPageState extends State<EditPrescriptionPage> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true); // updates screen
       }
     } else {
       if (mounted) {

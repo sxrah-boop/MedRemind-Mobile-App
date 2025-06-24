@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hopeless/services/patient_prescription_service.dart';
 import 'package:hopeless/widgets/DoseTimeEntryCard.dart';
-import 'package:hopeless/notification-reminders/notification_service.dart';
+import 'package:hopeless/notification-reminders/notification_servicee_basic.dart';
 
 class ScheduleStepScreen extends StatefulWidget {
   final int prescriptionId;

@@ -9,6 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/prescription_model.dart';
 
 class NotificationService {
+  // Track processed notifications to prevent double processing
+  static final Set<String> _processedNotifications = <String>{};
+  
   static Future<void> init() async {
     debugPrint('[🔔 INIT] Initializing notifications...');
     await initializeNotifications();
@@ -127,10 +130,10 @@ class NotificationService {
             timeZone: await AwesomeNotifications().getLocalTimeZoneIdentifier(),
             repeats: true,
           ),
-          actionButtons: [
-            NotificationActionButton(key: 'TAKEN', label: 'تم التناول ✅'),
-            NotificationActionButton(key: 'REMIND_LATER', label: 'ذكرني لاحقًا ⏰'),
-          ],
+          // actionButtons: [
+          //   NotificationActionButton(key: 'TAKEN', label: 'تم التناول ✅'),
+          //   NotificationActionButton(key: 'REMIND_LATER', label: 'ذكرني لاحقًا ⏰'),
+          // ],
         );
       }
     }
@@ -144,51 +147,83 @@ class NotificationService {
   }
 
   @pragma('vm:entry-point')
-  static Future<void> _onActionReceived(ReceivedAction action) async {
-    debugPrint('📲 [onActionReceived] Full Action: ${action.toMap()}');
+ @pragma('vm:entry-point')
+static Future<void> _onActionReceived(ReceivedAction action) async {
+  debugPrint('📲 [onActionReceived] Full Action: ${action.toMap()}');
 
-    final payload = action.payload?.map((key, value) => MapEntry(key, value ?? ''));
-    debugPrint('📦 [onActionReceived] Payload received: $payload');
+  final payload = action.payload?.map((key, value) => MapEntry(key, value ?? ''));
+  debugPrint('📦 [onActionReceived] Payload received: $payload');
 
-    if (action.buttonKeyPressed == 'TAKEN') {
-      debugPrint('✅ Action TAKEN pressed');
+  if (action.buttonKeyPressed == 'TAKEN') {
+    debugPrint('✅ Action TAKEN pressed');
 
-      if (payload != null) {
-        try {
-          debugPrint('[🐞 DEBUG HORAIRE_ID] Extracted horaireId from payload: ${payload['horaireId']}');
-          final horaireId = int.parse(payload['horaireId']!);
-          final scheduledTimeStr = payload['horaire']!;
-          final notificationId = int.parse(payload['notificationId']!);
+    if (payload != null) {
+      try {
+        final horaireId = int.parse(payload['horaireId']!);
+        final scheduledTimeStr = payload['horaire']!;
+        final notificationId = int.parse(payload['notificationId']!);
 
-          await handleDoseConfirmation(
-            horaireId: horaireId,
-            scheduledTimeStr: scheduledTimeStr,
-            notificationId: notificationId,
-          );
-        } catch (e) {
-          debugPrint('❌ Error during TAKEN: $e');
+        final isAlreadyProcessed = NotificationService.isDoseProcessedToday(horaireId);
+        if (isAlreadyProcessed) {
+          debugPrint('⚠️ Dose already processed — skipping confirmation and navigation');
+          // Redirect to home to avoid reopening screen
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            navKey.currentState?.pushNamedAndRemoveUntil('/home', (_) => false);
+          });
+          return;
         }
-      }
-    }
 
-    if (action.buttonKeyPressed == 'REMIND_LATER') {
-      debugPrint('⏰ Action REMIND_LATER pressed');
-      if (payload != null) {
-        await scheduleRemindLaterNotification(payload);
-      }
-    }
-
-    if (payload?['screen'] == 'notification') {
-      debugPrint('📍 Navigating to /notification with payload');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        navKey.currentState?.pushNamedAndRemoveUntil(
-          '/notification',
-          (_) => false,
-          arguments: payload,
+        await handleDoseConfirmation(
+          horaireId: horaireId,
+          scheduledTimeStr: scheduledTimeStr,
+          notificationId: notificationId,
         );
-      });
+
+        NotificationService.markDoseAsProcessed(horaireId);
+
+        // After success, go home — NOT to the notification screen
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navKey.currentState?.pushNamedAndRemoveUntil('/home', (_) => false);
+        });
+        return;
+
+      } catch (e) {
+        debugPrint('❌ Error during TAKEN: $e');
+      }
     }
   }
+
+  if (action.buttonKeyPressed == 'REMIND_LATER') {
+    debugPrint('⏰ Action REMIND_LATER pressed');
+    if (payload != null) {
+      await scheduleRemindLaterNotification(payload);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navKey.currentState?.pushNamedAndRemoveUntil('/home', (_) => false);
+      });
+    }
+    return; // Stop here, don't open screen
+  }
+
+  // Only open the screen if the user tapped the notification (not a button)
+  if ((action.buttonKeyPressed == null || action.buttonKeyPressed!.isEmpty) &&
+      payload?['screen'] == 'notification') {
+    final horaireId = int.tryParse(payload?['horaireId'] ?? '');
+    final isTaken = horaireId != null && NotificationService.isDoseProcessedToday(horaireId);
+    if (isTaken) {
+      debugPrint('🛑 Notification tapped but dose was already taken, skipping navigation');
+      return;
+    }
+
+    debugPrint('📍 Navigating to /notification with payload');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navKey.currentState?.pushNamedAndRemoveUntil(
+        '/notification',
+        (_) => false,
+        arguments: payload,
+      );
+    });
+  }
+}
 
   static int _generateUniqueId(int prescriptionId, int scheduleIndex, int weekday) {
     return prescriptionId * 1000 + scheduleIndex * 10 + weekday;
@@ -245,7 +280,7 @@ class NotificationService {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final parts = scheduledTimeStr.split(':');
-    final scheduled = DateTime(today.year, today.month, today.day, int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+    final scheduled = DateTime(today.year, today.month, today.day, int.parse(parts[0]), int.parse(parts[1]), parts.length > 2 ? int.parse(parts[2]) : 0);
     final diff = now.difference(scheduled).inMinutes;
     final status = diff > 180 ? 'missed' : (diff.abs() <= 30 ? 'taken' : 'late');
     final horairePriseActuel = now.toIso8601String();
@@ -278,5 +313,22 @@ class NotificationService {
         },
       ),
     );
+  }
+
+  // Method to clear processed notifications (call this daily or when needed)
+  static void clearProcessedNotifications() {
+    _processedNotifications.clear();
+    debugPrint('🧹 Cleared processed notifications cache');
+  }
+  
+  // Method to check if a dose was already processed today
+  static bool isDoseProcessedToday(int horaireId) {
+    final doseKey = '${horaireId}_${DateTime.now().toString().substring(0, 10)}';
+    return _processedNotifications.contains(doseKey);
+  }
+   static void markDoseAsProcessed(int horaireId) {
+    final doseKey = '${horaireId}_${DateTime.now().toString().substring(0, 10)}';
+    _processedNotifications.add(doseKey);
+    debugPrint('✅ Marked dose as processed: $doseKey');
   }
 }

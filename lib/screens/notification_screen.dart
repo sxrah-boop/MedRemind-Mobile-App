@@ -42,6 +42,65 @@ class _NotificationScreenState extends State<NotificationScreen> {
     _pageController.dispose();
     super.dispose();
   }
+  Future<void> _handleTakenButtonPress() async {
+  try {
+    final payload = widget.payload;
+    final rawHoraireId = payload['horaireId'];
+    final rawNotificationId = payload['notificationId'];
+    final rawHoraire = payload['horaire'];
+
+    debugPrint('🟢 "Taken" button pressed from screen');
+    debugPrint('📦 Raw horaireId = $rawHoraireId');
+
+    final horaireId = int.parse(rawHoraireId ?? '');
+    
+    // Check if already processed today
+    if (NotificationService.isDoseProcessedToday(horaireId)) {
+      debugPrint('⚠️ Dose already processed today, navigating to home');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ تم تأكيد هذه الجرعة مسبقاً اليوم'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+      return;
+    }
+
+    final notificationId = int.parse(rawNotificationId ?? '');
+    final horaire = (rawHoraire ?? '').length == 5 
+        ? '$rawHoraire:00' 
+        : (rawHoraire ?? '');
+
+    debugPrint('✅ Processing dose confirmation...');
+
+    await NotificationService.handleDoseConfirmation(
+      horaireId: horaireId,
+      scheduledTimeStr: horaire,
+      notificationId: notificationId,
+    );
+
+    // Mark as processed using the public method
+    NotificationService.markDoseAsProcessed(horaireId);
+
+    debugPrint('🎉 Dose confirmation completed. Navigating to /home');
+
+    Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+    
+  } catch (e, s) {
+    debugPrint('❌ Error in "Taken" button: $e');
+    debugPrint('📍Stack trace:\n$s');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('⚠️ حدث خطأ أثناء تأكيد الجرعة'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
+
 
   String _translateMeal(String? relation) {
     switch (relation) {
@@ -143,59 +202,125 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(24),
+        border:Border.all(color: lightBlue),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            Colors.blue.shade50.withOpacity(0.3),
+          ],
+        ),
+    
       ),
       child: Stack(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
             child: Container(
               width: double.infinity,
-              height: 250,
-              color: cardColor,
-              child: isAsset
-                  ? Image.asset(
-                      img,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildErrorWidget(),
-                    )
-                  : Image.network(
-                      img,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Image.asset(
-                        'assets/images/formentin.png',
-                        fit: BoxFit.cover,
+              height: 280,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.blue.shade50.withOpacity(0.1),
+                    Colors.white,
+                    Colors.blue.shade50.withOpacity(0.2),
+                  ],
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(5),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Medicine image with soft container
+                    Container(
+                      width: 180,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: isAsset
+                            ? Image.asset(
+                                img,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => _buildErrorWidget(),
+                              )
+                            : Image.network(
+                                img,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => Image.asset(
+                                  'assets/images/formentin.png',
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
                       ),
                     ),
+                    
+                    const SizedBox(height: 5),
+                    
+                    // Medicine name
+                    Text(
+                      item['brand_name'] ?? 'دواء غير معروف',
+                      style: TextStyle(
+                        color: primaryBlue,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    
+                    if (item['dci'] != null && item['dci'].toString().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        item['dci'],
+                        style: TextStyle(
+                          color: textSecondary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
+          
+          // Badge for alternative/main medicine
           if (!isMain)
             Positioned(
-              top: 12,
-              right: 12,
+              top: 16,
+              right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 173, 207, 255),
+                  color: const Color.fromARGB(255, 193, 216, 255),
                   borderRadius: BorderRadius.circular(20),
+                 
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.swap_horiz, color: Color.fromARGB(255, 14, 33, 81), size: 14),
+                    Icon(Icons.swap_horiz_rounded,  color: Color.fromARGB(255, 4, 21, 108), size: 14),
                     SizedBox(width: 4),
                     Text(
                       'بديل',
                       style: TextStyle(
-                        color: Color.fromARGB(255, 14, 33, 81),
-                        fontSize: 14,
+                        color: Color.fromARGB(255, 4, 21, 108),
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -205,18 +330,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
           if (isMain)
             Positioned(
-              top: 12,
-              right: 12,
+              top: 16,
+              right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: primaryBlue,
+                color: const Color.fromARGB(255, 36, 72, 133),
                   borderRadius: BorderRadius.circular(20),
+                  
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.medication, color: Colors.white, size: 14),
+                    Icon(Icons.star_rounded, color: Colors.white, size: 14),
                     SizedBox(width: 4),
                     Text(
                       'الدواء الأساسي',
@@ -230,55 +356,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
               ),
             ),
-          // Medicine name overlay at bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
-                ),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.7),
-                  ],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    item['brand_name'] ?? 'دواء غير معروف',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (item['dci'] != null && item['dci'].toString().isNotEmpty)
-                    Text(
-                      item['dci'],
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -286,16 +363,32 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   Widget _buildErrorWidget() {
     return Container(
-      color: lightBlue,
-      child: const Center(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.blue.shade50,
+            Colors.blue.shade100.withOpacity(0.5),
+          ],
+        ),
+      ),
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.medication, size: 48, color: primaryBlue),
-            SizedBox(height: 8),
+            Icon(
+              Icons.medication_rounded,
+              size: 48,
+              color: primaryBlue.withOpacity(0.7),
+            ),
+            const SizedBox(height: 8),
             Text(
               'صورة الدواء',
-              style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                color: primaryBlue.withOpacity(0.8),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -371,8 +464,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       children: [
                         // Enhanced Carousel
                         Container(
-                          height: 250,
-                          margin: const EdgeInsets.only(top: 16),
+                          height: 280,
+                          margin: const EdgeInsets.only(top: 20),
                           child: PageView.builder(
                             controller: _pageController,
                             onPageChanged: (index) {
@@ -391,11 +484,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
                         // Carousel Indicator
                         if (allItems.length > 1) ...[
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
                           _buildCarouselIndicator(allItems.length),
                         ],
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 32),
 
                         // Medicine Information
                         Padding(
@@ -459,85 +552,31 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 child: Column(
                   children: [
                     ElevatedButton(
-                      onPressed: () async {
-                        try {
-                          final rawHoraireId = payload['horaireId'];
-                          final rawNotificationId = payload['notificationId'];
-                          final rawHoraire = payload['horaire'];
-
-                          debugPrint('🟢 "Taken" button pressed');
-                          debugPrint('📦 Raw horaireId = $rawHoraireId');
-                          debugPrint(
-                            '📦 Raw notificationId = $rawNotificationId',
-                          );
-                          debugPrint('🕒 Raw horaire = $rawHoraire');
-
-                          final horaireId = int.parse(rawHoraireId ?? '');
-                          final notificationId = int.parse(
-                            rawNotificationId ?? '',
-                          );
-                          final horaire =
-                              (rawHoraire ?? '').length == 5
-                                  ? '$rawHoraire:00'
-                                  : (rawHoraire ?? '');
-
-                          debugPrint('✅ Parsed horaireId = $horaireId');
-                          debugPrint(
-                            '✅ Parsed notificationId = $notificationId',
-                          );
-                          debugPrint('✅ Final horaire = $horaire');
-
-                          await NotificationService.handleDoseConfirmation(
-                            horaireId: horaireId,
-                            scheduledTimeStr: horaire,
-                            notificationId: notificationId,
-                         
-                          );
-
-                          debugPrint(
-                            '🎉 handleDoseConfirmation completed. Navigating to /home',
-                          );
-
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            '/home',
-                            (_) => false,
-                          );
-                        } catch (e, s) {
-                          debugPrint('❌ Error in "Taken" button: $e');
-                          debugPrint('📍Stack trace:\n$s');
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('⚠️ حدث خطأ أثناء تأكيد الجرعة'),
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 25, 49, 100),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_circle_outline, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'تم أخذ الدواء',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+  onPressed: _handleTakenButtonPress,
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color.fromARGB(255, 25, 49, 100),
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    elevation: 0,
+  ),
+  child: const Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Icon(Icons.check_circle_outline, size: 20),
+      SizedBox(width: 8),
+      Text(
+        'تم أخذ الدواء',
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+        ),
+      ),
+    ],
+  ),
+),
                     const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: () async {

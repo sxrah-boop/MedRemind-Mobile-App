@@ -28,7 +28,7 @@ class InfoPill extends StatelessWidget {
             label,
             style: const TextStyle(
               color: Color.fromARGB(255, 23, 49, 109),
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
           ),

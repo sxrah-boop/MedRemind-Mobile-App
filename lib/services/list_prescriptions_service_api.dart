@@ -9,7 +9,7 @@ class PrescriptionService {
   static Future<List<Prescription>> fetchPrescriptions() async {
     final user = FirebaseAuth.instance.currentUser;
     final token = await user?.getIdToken();
-print(token);
+// print(token);
     if (token == null) throw Exception('User not authenticated');
 
     final response = await http.get(

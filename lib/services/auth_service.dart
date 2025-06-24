@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:hopeless/screens/Auth/PhoneLoginScreen.dart';
 import 'package:http/http.dart' as http;
 import 'package:hopeless/services/auth_storage.dart';
 
@@ -33,30 +34,23 @@ class AuthService {
   }
 
   // Checks whether the user has completed their profile using Firebase ID token
-  static Future<bool> checkUserStatusWithIdToken(String idToken) async {
-    print('[🔎] Checking if patient has completed their profile...');
+static Future<bool> checkUserStatusWithIdToken(String token, {required UserType userType}) async {
+  final url = userType == UserType.patient
+      ? 'https://medremind.onrender.com/api/patient/profile-status/'
+      : 'https://medremind.onrender.com/api/aidant/profile-status/';
 
-    final response = await http.get(
-      Uri.parse('https://medremind.onrender.com/api/patient/profile-status/'),
-      headers: {
-        'Authorization': 'Bearer $idToken',
-        'Content-Type': 'application/json',
-      },
-    );
+  final response = await http.get(
+    Uri.parse(url),
+    headers: {'Authorization': 'Bearer $token'},
+  );
 
-    print('[🌐] Response Status: ${response.statusCode}');
-    print('[📝] Response Body: ${response.body}');
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final hasProfile = data['has_profile'] ?? false;
-      print('[📋] has_profile: $hasProfile');
-      return hasProfile;
-    } else {
-      print('[❌] Error checking profile status');
-      throw Exception("Failed to check profile status");
-    }
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['has_profile'] == true;
+  } else {
+    throw Exception("Failed to check profile status");
   }
+}
 
   // Completes the user profile
   static Future<void> completeUserProfile({

@@ -31,15 +31,20 @@ class HistoryCard extends StatelessWidget {
     return dose == 1 ? 'حبة واحدة' : '$dose حبات';
   }
 
-  String _formatConfirmationTime(String timestamp) {
-    try {
-      final dt = DateTime.parse(timestamp).toLocal();
-      final timeStr = DateFormat('HH:mm').format(dt);
-      return 'تم أخذ الجرعة على الساعة $timeStr';
-    } catch (e) {
-      return 'تم أخذ الجرعة';
-    }
+String _formatConfirmationTime(String timestamp) {
+  try {
+    final dt = DateTime.parse(timestamp).toLocal();
+    final dayName = DateFormat.EEEE('ar').format(dt);     // e.g. الثلاثاء
+    final dayNumber = DateFormat.d('ar').format(dt);      // e.g. 24
+    final month = algerianMonths[dt.month] ?? '';
+    final timeStr = DateFormat('HH:mm').format(dt);       // e.g. 15:30
+
+    return 'تم أخذ الجرعة يوم $dayName، $dayNumber $month على الساعة $timeStr';
+  } catch (e) {
+    debugPrint('⚠️ Error parsing timestamp: $e');
+    return 'تم أخذ الجرعة';
   }
+}
 
   Color _statusColor(String statut) {
     switch (statut) {
@@ -67,6 +72,21 @@ class HistoryCard extends StatelessWidget {
     }
   }
 
+  
+static const algerianMonths = {
+  1: 'جانفي',
+  2: 'فيفري',
+  3: 'مارس',
+  4: 'أفريل',
+  5: 'ماي',
+  6: 'جوان',
+  7: 'جويلية',
+  8: 'أوت',
+  9: 'سبتمبر',
+ 10: 'أكتوبر',
+ 11: 'نوفمبر',
+ 12: 'ديسمبر',
+};
   @override
   Widget build(BuildContext context) {
     return Directionality(

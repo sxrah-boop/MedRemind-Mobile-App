@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hopeless/Aidant/CaregiverHome.dart';
+import 'package:hopeless/Aidant/CaregiverInfoScreen.dart';
 import 'package:hopeless/screens/Auth/CompleteUserInfoScreen.dart';
-import 'package:hopeless/services/auth_service.dart';
 import 'package:hopeless/screens/homescreen.dart' as home;
+import 'package:hopeless/services/auth_service.dart';
+
+// Make sure to import UserType from wherever you define it
+import 'package:hopeless/screens/Auth/PhoneLoginScreen.dart' show UserType;
+import 'package:shared_preferences/shared_preferences.dart';
+
 class OTPScreen extends StatefulWidget {
   final String verificationId;
   final String phoneNumber;
+  final UserType userType;
 
   const OTPScreen({
     Key? key,
     required this.verificationId,
     required this.phoneNumber,
+    required this.userType,
   }) : super(key: key);
 
   @override
@@ -41,43 +50,101 @@ class _OTPScreenState extends State<OTPScreen> {
         smsCode: code,
       );
 
-      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
       final user = userCredential.user;
 
-      if (user != null) {
-        print('Step 2: Firebase sign-in successful');
-        final idToken = await user.getIdToken();
-        print('Firebase ID Token: $idToken');
+      if (user == null) throw Exception("Firebase user is null after sign-in.");
 
+      print('Step 2: Firebase sign-in successful');
+      final idToken = await user.getIdToken();
+
+      try {
         print('Step 3: Sending token to backend for UID...');
         final uid = await AuthService.verifyWithBackend(idToken!);
         print('UID from backend: $uid');
 
         print('Step 4: Checking user status on backend...');
-        final hasProfile = await AuthService.checkUserStatusWithIdToken(idToken);
 
-        if (hasProfile) {
-          print('User has profile → Navigating to Home');
-         Navigator.pushReplacement(
-  context,
-  MaterialPageRoute(builder: (_) => home.HomeScreen()),
-);
+        // Check both user types to determine the user's actual status
+        bool isPatient = false;
+        bool isCaregiver = false;
 
-        } else {
-          print('User does not have profile → Navigating to Complete Info');
+        try {
+          isPatient = await AuthService.checkUserStatusWithIdToken(
+            idToken,
+            userType: UserType.patient,
+          );
+        } catch (e) {
+          print('Patient check failed: $e');
+        }
+
+        try {
+          isCaregiver = await AuthService.checkUserStatusWithIdToken(
+            idToken,
+            userType: UserType.caregiver,
+          );
+        } catch (e) {
+          print('Caregiver check failed: $e');
+        }
+
+        // Navigate based on actual user status, not the selected type
+        if (isPatient) {
+          print('✅ User is registered as Patient → Navigating to Patient Home');
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('patient_token', idToken);
+          print('🔒 Saved patient token to SharedPreferences');
+
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const CompleteUserInfoScreen()),
+            MaterialPageRoute(builder: (_) => home.HomeScreen()),
           );
+        } else if (isCaregiver) {
+          print(
+            '✅ User is registered as Caregiver → Navigating to Caregiver Home',
+          );
+          print('Aidant token: $idToken');
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('caregiver_token', idToken);
+          print('🔒 Saved caregiver token to SharedPreferences');
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => CaregiverHomeScreen()),
+          );
+        } else {
+          // User has neither profile, navigate to complete profile based on selected type
+          print('📝 User needs to complete profile → Navigating accordingly');
+
+          if (widget.userType == UserType.patient) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const CompleteUserInfoScreen()),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const CaregiverInfoScreen()),
+            );
+          }
         }
+      } catch (backendError) {
+        print('[❌ BACKEND ERROR] $backendError');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("خطأ من الخادم: ${backendError.toString()}")),
+        );
       }
-    } catch (e) {
-      print('ERROR during verification: $e');
+    } catch (firebaseError) {
+      print('[❌ FIREBASE ERROR] $firebaseError');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("حدث خطأ أثناء التحقق")),
+        SnackBar(content: Text("خطأ من Firebase: ${firebaseError.toString()}")),
       );
-      setState(() => _loading = false);
     }
+
+    setState(() => _loading = false);
   }
 
   @override
@@ -124,9 +191,13 @@ class _OTPScreenState extends State<OTPScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: _loading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('متابعة', style: TextStyle(color: Colors.white)),
+              child:
+                  _loading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                        'متابعة',
+                        style: TextStyle(color: Colors.white),
+                      ),
             ),
           ],
         ),

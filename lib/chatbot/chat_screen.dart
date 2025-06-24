@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hopeless/chatbot/chatbot_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -12,30 +13,37 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  List<Map<String, dynamic>> messages = [
-    {
-      'isBot': true,
-      'text':
-          'يُفضّل تناول الميتفورمين مع الطعام لتقليل الآثار الجانبية مثل الغثيان. الجرعات المحددة لك هي وجبة واحدة عند الساعة 11:12 صباحًا ووجبة واحدة عند الساعة 23:12 مساءً.\n\nمن المهم اتباع هذه الجدولة بدقة. إذا واجهت أي أعراض جانبية مثل الغثيان الشديد أو التعب، يجب عليك استشارة الطبيب على الفور.',
-    },
-    {'isBot': false, 'text': 'واشمن دوا نشرب على 7:30 نسيت'},
-    {
-      'isBot': true,
-      'text':
-          'الدواء الذي تتناوله على الساعة 07:30 صباحًا هو جليكلازيد (Gliclazide).',
-    },
-  ];
+List<Map<String, dynamic>> messages = [
 
-  void _sendMessage() {
-    final text = _controller.text.trim();
-    if (text.isNotEmpty) {
-      setState(() {
-        messages.add({'isBot': false, 'text': text});
-      });
-      _controller.clear();
-      _scrollToBottom();
-    }
-  }
+];
+
+void _sendMessage() async {
+  final text = _controller.text.trim();
+  if (text.isEmpty) return;
+
+  setState(() {
+    messages.add({'isBot': false, 'text': text});
+    _controller.clear();
+  });
+  _scrollToBottom();
+
+  print('📤 Sending message to chatbot: $text');
+  setState(() {
+    messages.add({'isBot': true, 'text': '...'});
+  });
+
+  final reply = await ChatbotService.sendMessage(text);
+
+  // Replace the placeholder "..." with the real reply
+  setState(() {
+    messages.removeLast();
+    messages.add({
+      'isBot': true,
+      'text': reply ?? '❌ حدث خطأ أثناء الاتصال بالمساعد، حاول مجددًا.',
+    });
+  });
+  _scrollToBottom();
+}
 
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -141,7 +149,7 @@ class _ChatScreenState extends State<ChatScreen> {
               style: GoogleFonts.ibmPlexSansArabic(
                 textStyle: const TextStyle(
                   color: Color(0xFF8A8A8A),
-                  fontSize: 14,
+                  fontSize: 12,
                 ),
               ),
             ),

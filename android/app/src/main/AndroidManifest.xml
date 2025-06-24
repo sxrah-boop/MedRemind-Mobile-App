@@ -7,7 +7,7 @@
 
 
     <application
-        android:label="hopeless"
+        android:label="MedRemind"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

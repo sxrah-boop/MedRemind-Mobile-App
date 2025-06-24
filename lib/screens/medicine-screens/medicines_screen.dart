@@ -74,10 +74,7 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
                         padding: const EdgeInsets.only(bottom: 80),
                         children: _buildCurrentList(),
                       )
-                    : const Padding(
-                        padding: EdgeInsets.only(bottom: 80),
-                        child: HistoryList(), // ✅ FIXED: used directly in Expanded
-                      ),
+                    : HistoryList(),
               ),
             ],
           ),

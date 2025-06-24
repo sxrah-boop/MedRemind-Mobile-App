@@ -1,31 +1,33 @@
 import 'dart:convert';
-import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hopeless/chatbot/chat_screen.dart';
-import 'package:hopeless/screens/Auth/PhoneLoginScreen.dart';
-import 'package:hopeless/screens/homescreen.dart';
+import 'package:hopeless/Aidant/CaregiverHome.dart';
+import 'package:hopeless/Aidant/fetchRole.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:hopeless/notification-reminders/notification_service.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 
 import 'firebase_options.dart';
-import 'notification-reminders/notification_service.dart';
-
+import 'notification-reminders/notification_servicee_basic.dart';
+import 'screens/homescreen.dart';
 import 'screens/notification_screen.dart';
+import 'screens/Auth/user_type_selection_screen.dart';
 
 final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Firebase init
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Notifications init
-  await NotificationService.init(); // includes listener setup + payload save if any
+  // Initialize Notifications
+  await NotificationService.init();
+  await initializeDateFormatting();
 
   runApp(MyApp());
 }
@@ -37,32 +39,79 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String? screenToLaunch;
+  Widget? _initialScreen;
 
   @override
   void initState() {
     super.initState();
-    _loadInitialNotificationPayload();
+    _setupInitialScreen();
   }
 
-  Future<void> _loadInitialNotificationPayload() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final payloadJson = prefs.getString('initial_payload');
+Future<void> _setupInitialScreen() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final payloadJson = prefs.getString('initial_payload');
 
-    if (payloadJson != null) {
-      final Map<String, dynamic> payload = jsonDecode(payloadJson);
-      screenToLaunch = payload['screen'];
-      await prefs.remove('initial_payload');
+  if (payloadJson != null) {
+    final Map<String, dynamic> payload = jsonDecode(payloadJson);
+    screenToLaunch = payload['screen'];
+    await prefs.remove('initial_payload');
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (screenToLaunch == 'notification') {
-          navKey.currentState?.pushNamedAndRemoveUntil('/notification', (r) => false);
-        }
-      });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (screenToLaunch == 'notification') {
+        navKey.currentState?.pushNamedAndRemoveUntil(
+          '/notification',
+          (route) => false,
+          arguments: payload,
+        );
+      }
+    });
+  }
+
+  final patientToken = prefs.getString('patient_token');
+  final caregiverToken = prefs.getString('caregiver_token');
+  final idToken = caregiverToken ?? patientToken;
+
+  if (idToken != null) {
+    if (caregiverToken != null) {
+      print('🟢 Authenticated as Caregiver');
+      print('🔐 Caregiver token: $caregiverToken');
+    } else if (patientToken != null) {
+      print('🔵 Authenticated as Patient');
+      print('🔐 Patient token: $patientToken');
     }
+
+    final userRoleData = await fetchUserRole(idToken);
+    final role = userRoleData?['role'];
+    print('📋 Backend role response: $role');
+
+    setState(() {
+      if (role == 'patient') {
+        _initialScreen = const HomeScreen();
+      } else if (role == 'aidant') {
+        _initialScreen = const CaregiverHomeScreen();
+      } else {
+        _initialScreen = const UserTypeSelectionScreen();
+      }
+    });
+  } else {
+    print('❌ No token found in SharedPreferences. Redirecting to UserTypeSelectionScreen.');
+    setState(() {
+      _initialScreen = const UserTypeSelectionScreen();
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {
+    // Show loading until initial screen is determined
+    if (_initialScreen == null) {
+      return const MaterialApp(
+        home: Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
     return MaterialApp(
       navigatorKey: navKey,
       debugShowCheckedModeBanner: false,
@@ -80,28 +129,27 @@ class _MyAppState extends State<MyApp> {
           labelSmall: GoogleFonts.ibmPlexSansArabic(fontSize: 11, fontWeight: FontWeight.w400),
         ),
       ),
-      initialRoute: '/',
-    onGenerateRoute: (RouteSettings settings) {
-  switch (settings.name) {
-    case '/':
-    case '/home':
-      return MaterialPageRoute(builder: (_) => PhoneLoginScreen());
+      home: _initialScreen,
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/home':
+            return MaterialPageRoute(builder: (_) => const HomeScreen());
 
-    case '/notification':
-      final payload = settings.arguments as Map<String, String>;
-      return MaterialPageRoute(
-        builder: (_) => NotificationScreen(payload: payload),
-      );
+          case '/UserTypeSelectionScreen':
+            return MaterialPageRoute(builder: (_) => const UserTypeSelectionScreen());
 
-    default:
-      return MaterialPageRoute(
-        builder: (_) => const Scaffold(
-          body: Center(child: Text('❌ Route not found')),
-        ),
-      );
-  }
-}
+          case '/notification':
+            final payload = settings.arguments as Map<String, String>;
+            return MaterialPageRoute(builder: (_) => NotificationScreen(payload: payload));
 
+          default:
+            return MaterialPageRoute(
+              builder: (_) => const Scaffold(
+                body: Center(child: Text('Loading..')),
+              ),
+            );
+        }
+      },
     );
   }
 }

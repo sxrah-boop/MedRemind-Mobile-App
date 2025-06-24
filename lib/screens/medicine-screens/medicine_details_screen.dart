@@ -137,7 +137,7 @@ class _MedicinedetailsState extends State<Medicinedetails> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 10),
 
                     // Medicine name and dosage
                     Text(
@@ -170,7 +170,7 @@ class _MedicinedetailsState extends State<Medicinedetails> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 10),
 
               // Content section
               Padding(
@@ -225,7 +225,7 @@ class _MedicinedetailsState extends State<Medicinedetails> {
                       ],
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 25),
 
                     // Instructions section
                     Row(
