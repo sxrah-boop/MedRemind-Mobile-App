@@ -1,16 +1,25 @@
-# hopeless
+# 🩺 MedRemind
 
-A new Flutter project.
+**MedRemind** is a Flutter mobile application designed to help patients (and caregivers) manage their **medication reminders**, **dosage schedules**, and **medical appointments**. It aims to improve therapeutic adherence, reduce the risk of missed doses, and empower users to stay on track with their health treatments.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🚀 Features
 
-A few resources to get you started if this is your first Flutter project:
+- 🔔 Personalized medication reminders with custom schedules
+- 📅 Notification system
+- 📷 Medicine image support
+- 📊 Tracking of taken/missed/late doses
+- 👨‍⚕️ Separate flows for patients and caregivers
+- 🧠 Intelligent assistant (AI-powered chatbot – NLP Module developed seprately)
+- 🔒 Secure login via Firebase phone authentication
+- Linked to a Django backend viA RestAPIs
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🛠️ Tech Stack
+
+- **Flutter** 3.x
+- **Firebase** (Auth, Firestore)
+- **Awesome Notifications**
+- **Dio** for API handling
