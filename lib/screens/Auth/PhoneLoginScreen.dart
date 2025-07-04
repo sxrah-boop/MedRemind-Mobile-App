@@ -50,7 +50,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
     try {
       print('[DEBUG] Starting verifyPhoneNumber...');
-      // FirebaseAuth.instance.setSettings(appVerificationDisabledForTesting: true);
+       FirebaseAuth.instance.setSettings(appVerificationDisabledForTesting: true);
 
       await _auth.verifyPhoneNumber(
         phoneNumber: fullPhone,

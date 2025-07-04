@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hopeless/Aidant/fetchRole.dart';
 import 'package:hopeless/screens/Auth/PhoneLoginScreen.dart';
 import 'package:http/http.dart' as http;
 import 'package:hopeless/services/auth_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   // Verifies Firebase ID token with the backend and saves UID
@@ -80,9 +83,46 @@ static Future<bool> checkUserStatusWithIdToken(String token, {required UserType 
 
     print('[🌐] Complete Profile Response: ${response.statusCode}');
     print('[📝] Response Body: ${response.body}');
+    
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception('Failed to complete user profile');
     }
   }
+
+
+static Future<String?> getCurrentValidToken() async {
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+    
+    if (currentUser == null) {
+      return null;
+    }
+    
+    try {
+      // Always get a fresh token to ensure it's not expired
+      return await currentUser.getIdToken(true);
+    } catch (e) {
+      print('❌ Failed to get valid token: $e');
+      return null;
+    }
+  }
+  
+  static Future<Map<String, dynamic>?> getCurrentUserRole() async {
+    final token = await getCurrentValidToken();
+    if (token == null) return null;
+    
+    return await fetchUserRole(token);
+  }
+  
+  static Future<void> signOut() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Clear Firebase auth
+    await FirebaseAuth.instance.signOut();
+    
+    // Clear stored tokens
+    await prefs.remove('patient_token');
+    await prefs.remove('caregiver_token');
+  }
+  
 }

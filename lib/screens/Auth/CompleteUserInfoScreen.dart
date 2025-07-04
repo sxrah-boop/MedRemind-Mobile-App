@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:hopeless/screens/homescreen.dart';
 import 'package:hopeless/services/auth_service.dart';
 
 
@@ -108,7 +109,7 @@ class _CompleteUserInfoScreenState extends State<CompleteUserInfoScreen> {
 
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) => const HomeScreen()),
+                          MaterialPageRoute(builder: (context) =>  HomeScreen()),
                         );
                       } catch (e) {
                         print('❌ Error completing profile: $e');
@@ -188,11 +189,3 @@ class _CompleteUserInfoScreenState extends State<CompleteUserInfoScreen> {
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Text('test');
-  }
-}

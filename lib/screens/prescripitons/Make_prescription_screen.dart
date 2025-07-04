@@ -57,19 +57,35 @@ class _MakePrescriptionScreenState extends State<MakePrescriptionScreen> {
     }
   }
 
-  Future<void> _searchMedicines(String query) async {
-    setState(() => _isSearching = true);
-    final results = await MedicineApi.search(query);
-    setState(() {
-      _medicineResults = results;
-      _isSearching = false;
-    });
-
-    if (results.isNotEmpty) {
-      final med = results.first;
-      fallbackImageUrl = await PrescriptionService.fetchMedicineImageUrl(med['id']);
-    }
+// Add this method to prevent searching when medicine is selected
+Future<void> _searchMedicines(String query) async {
+  // Don't search if a medicine is already selected and the query matches
+  if (_selectedMedicine != null && 
+      _selectedMedicine!['brand_name'].toString().toLowerCase() == query.toLowerCase()) {
+    return;
   }
+
+  // Clear selected medicine if user starts typing something different
+  if (_selectedMedicine != null && 
+      _selectedMedicine!['brand_name'].toString().toLowerCase() != query.toLowerCase()) {
+    setState(() {
+      _selectedMedicine = null;
+      fallbackImageUrl = null;
+    });
+  }
+
+  setState(() => _isSearching = true);
+  final results = await MedicineApi.search(query);
+  setState(() {
+    _medicineResults = results;
+    _isSearching = false;
+  });
+
+  if (results.isNotEmpty) {
+    final med = results.first;
+    fallbackImageUrl = await PrescriptionService.fetchMedicineImageUrl(med['id']);
+  }
+}
 
   Future<void> _pickDate({required bool isStart}) async {
     final picked = await showDatePicker(

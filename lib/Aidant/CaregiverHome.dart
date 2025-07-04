@@ -69,6 +69,20 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> {
     return history;
   }
 
+  String _formatAge(String birthDate) {
+    try {
+      final birth = DateTime.parse(birthDate);
+      final now = DateTime.now();
+      final age = now.year - birth.year;
+      if (now.month < birth.month || (now.month == birth.month && now.day < birth.day)) {
+        return '${age - 1} سنة';
+      }
+      return '$age سنة';
+    } catch (e) {
+      return 'غير محدد';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -137,6 +151,7 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> {
                 ? const Center(child: Text('لا توجد بيانات مريض حالياً'))
                 : Column(
                     children: [
+                      // Enhanced Patient Info Card
                       Container(
                         margin: const EdgeInsets.all(16),
                         padding: const EdgeInsets.all(20),
@@ -151,37 +166,107 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> {
                             ),
                           ],
                         ),
-                        child: Row(
+                        child: Column(
                           children: [
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF112A54).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              child: const Icon(Icons.person, color: Color(0xFF112A54), size: 30),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    patientInfo!['full_name'],
-                                    style: GoogleFonts.ibmPlexSansArabic(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF112A54),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 70,
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        const Color(0xFF112A54),
+                                        const Color(0xFF112A54).withOpacity(0.7),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
                                     ),
+                                    borderRadius: BorderRadius.circular(35),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'رقم الهاتف: ${patientInfo!['phone_number']}',
-                                    style: GoogleFonts.ibmPlexSansArabic(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                    ),
+                                  child: Icon(
+                                    patientInfo!['gender'] == 'female' ? Icons.woman : Icons.man,
+                                    color: Colors.white,
+                                    size: 35,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        patientInfo!['full_name'],
+                                        style: GoogleFonts.ibmPlexSansArabic(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF112A54),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _formatAge(patientInfo!['birth_date']),
+                                        style: GoogleFonts.ibmPlexSansArabic(
+                                          fontSize: 14,
+                                          color: Colors.grey[600],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEDF6FE),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFF112A54).withOpacity(0.1)),
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.phone, color: Colors.grey[600], size: 18),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'رقم الهاتف: ${patientInfo!['phone_number']}',
+                                        style: GoogleFonts.ibmPlexSansArabic(
+                                          fontSize: 14,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.location_on, color: Colors.grey[600], size: 18),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'العنوان: ${patientInfo!['address']}',
+                                        style: GoogleFonts.ibmPlexSansArabic(
+                                          fontSize: 14,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.cake, color: Colors.grey[600], size: 18),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'تاريخ الميلاد: ${DateFormat('dd/MM/yyyy').format(DateTime.parse(patientInfo!['birth_date']))}',
+                                        style: GoogleFonts.ibmPlexSansArabic(
+                                          fontSize: 14,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -225,21 +310,48 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> {
                       ),
                       const SizedBox(height: 12),
                       Expanded(
-                        child: ListView.builder(
-                          itemCount: filteredHistory.length,
-                          itemBuilder: (context, index) {
-                            final item = filteredHistory[index];
-                            return PrescriptionHistoryCard(
-                              medicineName: 'دواء غير محدد',
-                              imageUrl: 'https://via.placeholder.com/64',
-                              posologie: 1,
-                              scheduledDate: item['horaire_prise_actuel']?.substring(0, 10),
-                              scheduledTime: item['horaire_prise_actuel']?.substring(11, 16),
-                              status: item['statut'],
-                              confirmedAt: item['horaire_prise_actuel'],
-                            );
-                          },
-                        ),
+                        child: filteredHistory.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.medication_outlined,
+                                      size: 64,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      showDailyOnly ? 'لا توجد جرعات لليوم' : 'لا توجد سجلات جرعات',
+                                      style: GoogleFonts.ibmPlexSansArabic(
+                                        fontSize: 16,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.only(bottom: 20),
+                                itemCount: filteredHistory.length,
+                                itemBuilder: (context, index) {
+                                  final item = filteredHistory[index];
+                                  final medicine = item['medicine'];
+                                  return PrescriptionHistoryCard(
+                                    medicineName: medicine['dci'] ?? 'دواء غير محدد',
+                                    brandName: medicine['brand_name'] ?? '',
+                                    dosage: medicine['dosage'] ?? '',
+                                    medicineType: medicine['medicine_type'] ?? '',
+                                    imageUrl: medicine['image'] ?? '',
+                                    posologie: item['posologie'] ?? 1,
+                                    scheduledDate: item['horaire_prise_actuel']?.substring(0, 10) ?? '',
+                                    scheduledTime: item['horaire'] ?? '',
+                                    actualTime: item['horaire_prise_actuel']?.substring(11, 16) ?? '',
+                                    status: item['statut'] ?? 'unknown',
+                                    confirmedAt: item['horaire_prise_actuel'] ?? '',
+                                  );
+                                },
+                              ),
                       ),
                     ],
                   ),
@@ -250,20 +362,28 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> {
 
 class PrescriptionHistoryCard extends StatelessWidget {
   final String medicineName;
+  final String brandName;
+  final String dosage;
+  final String medicineType;
   final String imageUrl;
   final int posologie;
   final String scheduledTime;
   final String scheduledDate;
+  final String actualTime;
   final String status;
   final String confirmedAt;
 
   const PrescriptionHistoryCard({
     Key? key,
     required this.medicineName,
+    required this.brandName,
+    required this.dosage,
+    required this.medicineType,
     required this.imageUrl,
     required this.posologie,
     required this.scheduledTime,
     required this.scheduledDate,
+    required this.actualTime,
     required this.status,
     required this.confirmedAt,
   }) : super(key: key);
@@ -284,13 +404,26 @@ class PrescriptionHistoryCard extends StatelessWidget {
   String _statusText(String status) {
     switch (status) {
       case 'taken':
-        return 'تم في الوقت';
+        return 'تم تناولها';
       case 'late':
         return 'متأخرة';
       case 'missed':
         return 'فائتة';
       default:
         return 'غير معروف';
+    }
+  }
+
+  IconData _statusIcon(String status) {
+    switch (status) {
+      case 'taken':
+        return Icons.check_circle;
+      case 'late':
+        return Icons.access_time;
+      case 'missed':
+        return Icons.cancel;
+      default:
+        return Icons.help;
     }
   }
 
@@ -313,64 +446,191 @@ class PrescriptionHistoryCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
+        child: Column(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                width: 56,
-                height: 56,
-                color: const Color(0xFF112A54).withOpacity(0.1),
-                child: const Icon(Icons.medication, color: Color(0xFF112A54), size: 28),
-              ),
+            Row(
+              children: [
+                // Medicine Image
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: imageUrl.isNotEmpty
+                      ? Image.network(
+                          imageUrl,
+                          width: 64,
+                          height: 64,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 64,
+                              height: 64,
+                              color: const Color(0xFF112A54).withOpacity(0.1),
+                              child: const Icon(
+                                Icons.medication,
+                                color: Color(0xFF112A54),
+                                size: 32,
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          width: 64,
+                          height: 64,
+                          color: const Color(0xFF112A54).withOpacity(0.1),
+                          child: const Icon(
+                            Icons.medication,
+                            color: Color(0xFF112A54),
+                            size: 32,
+                          ),
+                        ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        medicineName,
+                        style: GoogleFonts.ibmPlexSansArabic(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF112A54),
+                        ),
+                      ),
+                      if (brandName.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            brandName,
+                            style: GoogleFonts.ibmPlexSansArabic(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      if (dosage.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            dosage,
+                            style: GoogleFonts.ibmPlexSansArabic(
+                              fontSize: 13,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _statusColor(status).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _statusColor(status).withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _statusIcon(status),
+                        size: 16,
+                        color: _statusColor(status),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _statusText(status),
+                        style: GoogleFonts.ibmPlexSansArabic(
+                          fontSize: 12,
+                          color: _statusColor(status),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
                 children: [
-                  Text(
-                    medicineName,
-                    style: GoogleFonts.ibmPlexSansArabic(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF112A54),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.medication_liquid, size: 16, color: Colors.grey[600]),
+                            const SizedBox(width: 4),
+                            Text(
+                              'الجرعة: ${posologie == 1 ? 'حبة واحدة' : '$posologie حبات'}',
+                              style: GoogleFonts.ibmPlexSansArabic(
+                                fontSize: 13,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
+                            const SizedBox(width: 4),
+                            Text(
+                              'موعد مقرر: $scheduledTime',
+                              style: GoogleFonts.ibmPlexSansArabic(
+                                fontSize: 13,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'الجرعة: ${posologie == 1 ? 'حبة واحدة' : '$posologie حبات'}',
-                    style: GoogleFonts.ibmPlexSansArabic(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'في $scheduledDate الساعة $scheduledTime',
-                    style: GoogleFonts.ibmPlexSansArabic(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                            const SizedBox(width: 4),
+                            Text(
+                              DateFormat('dd/MM/yyyy').format(DateTime.parse(scheduledDate)),
+                              style: GoogleFonts.ibmPlexSansArabic(
+                                fontSize: 13,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        if (status == 'taken' && actualTime.isNotEmpty)
+                          Row(
+                            children: [
+                              Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
+                              const SizedBox(width: 4),
+                              Text(
+                                'تم في: $actualTime',
+                                style: GoogleFonts.ibmPlexSansArabic(
+                                  fontSize: 13,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
                   ),
                 ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: _statusColor(status).withOpacity(0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _statusColor(status).withOpacity(0.3)),
-              ),
-              child: Text(
-                _statusText(status),
-                style: GoogleFonts.ibmPlexSansArabic(
-                  fontSize: 12,
-                  color: _statusColor(status),
-                  fontWeight: FontWeight.w600,
-                ),
               ),
             ),
           ],
